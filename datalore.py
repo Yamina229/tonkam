@@ -7,8 +7,20 @@ import subprocess  # To run external scripts like 'press.py'
 def random_click(locations):
     x, y = random.choice(locations)
     pyautogui.click(x, y)
-
+# New Step: Detect the tab button using 'tab_button.png'
+try:
+    tab_button_location = pyautogui.locateCenterOnScreen('tab_button.png', confidence=0.8)
+    if tab_button_location is not None:
+        print("Tab button detected, clicking at (1342, 125)...")
+        click_at(1342, 125)
+        time.sleep(2)
+    else:
+        print("Tab button not detected, proceeding to Step 1...")
+except Exception as e:
+    print(f"Error detecting tab button: {e}")
+    print("Proceeding to Step 1...")
 # Task 1: Open www.datalore.jetbrains.com
+time.sleep(2)
 pyautogui.click(306, 81)  # Click location (x:306, y:81)
 pyautogui.write("datalore.jetbrains.com")  # Type URL
 pyautogui.press('enter')  # Press Enter
