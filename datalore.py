@@ -7,6 +7,7 @@ import subprocess  # To run external scripts like 'press.py'
 def random_click(locations):
     x, y = random.choice(locations)
     pyautogui.click(x, y)
+time.sleep(3)    
 # New Step: Detect the tab button using 'tab_button.png'
 try:
     tab_button_location = pyautogui.locateCenterOnScreen('tab_button.png', confidence=0.8)
