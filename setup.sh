@@ -7,7 +7,7 @@ sudo add-apt-repository -y ppa:mozillateam/ppa
 sudo apt update
 sudo apt install firefox
 # Install Firefox and required packages
-sudo apt install -y  curl jq xclip unzip git python3-dev python3-tk python3-pip gnome-screenshot python3.8-venv zip 
+sudo apt install -y xdotool curl jq xclip unzip git python3-dev python3-tk python3-pip gnome-screenshot python3.8-venv zip 
 
 # Create Python virtual environment
 python3 -m venv myenv
