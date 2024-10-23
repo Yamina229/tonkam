@@ -3,11 +3,13 @@
 # Add Mozilla Team PPA for Firefox
 sudo add-apt-repository -y ppa:mozillateam/ppa
 
+sudo apt -y --fix-broken install
+
 # Update package list
 sudo apt update
-sudo apt install firefox
+
 # Install Firefox and required packages
-sudo apt install -y xdotool curl jq xclip unzip git python3-dev python3-tk python3-pip gnome-screenshot python3.8-venv zip 
+sudo apt install -y firefox xdotool zip curl jq xclip unzip git python3-dev python3-tk python3-pip gnome-screenshot python3.8-venv
 
 # Create Python virtual environment
 python3 -m venv myenv
@@ -22,6 +24,6 @@ touch ~/.Xauthority
 pip install pyautogui
 pip install --upgrade pillow
 pip install opencv-python-headless
-pip install pyperclip
+
 # Output completion message
 echo "All packages installed and environment set up successfully."
