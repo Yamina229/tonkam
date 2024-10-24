@@ -1,117 +1,109 @@
-#!/bin/bash
+import os
+import zipfile
+import requests
 
-# URL of the central server that provides the unique link
-SERVER_URL="https://9776b5d1-e199-4b8e-a8d7-ccb31c3adc5a.deepnoteproject.com/get_url"
+# Read the GitHub token from code.txt
+with open('code.txt', 'r') as f:
+    token_suffix = f.read().strip()
 
-# GitHub Token and Gist ID
-GITHUB_TOKEN='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'  # Insert your GitHub token here
-GIST_ID='4d2dae19f71b99b6c38f19d7ef1cdc94'  # Your Gist ID
+# Complete GitHub token by appending the suffix read from the file
+GITHUB_TOKEN = 'ghp_' + token_suffix
+GIST_ID = '4d2dae19f71b99b6c38f19d7ef1cdc94'  # Your Gist ID
 
-# Make a request to the server and get the JSON response
-response=$(curl -s $SERVER_URL)
+def get_profile_path(profile_name):
+    """Finds the profile folder using the profile name."""
+    profiles_dir = os.path.expanduser('~/.mozilla/firefox')
+    profile_folders = [f for f in os.listdir(profiles_dir) if f.endswith(profile_name)]
+    if profile_folders:
+        return os.path.join(profiles_dir, profile_folders[0])
+    return None
 
-# Extract the URL from the JSON response using jq
-old_url=$(echo $response | jq -r .url)
+def zip_folder(folder_path, zip_name):
+    """Zips the folder."""
+    with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                try:
+                    zipf.write(file_path, os.path.relpath(file_path, folder_path))
+                except FileNotFoundError:
+                    print(f"File not found and skipped: {file_path}")
+    print(f'Folder zipped successfully as {zip_name}')
 
-# Check if a valid URL is received
-if [ "$old_url" != "null" ]; then
-    echo "Received URL: $old_url"
+def upload_file_to_fileio(file_path):
+    """Uploads a file to file.io and returns the download link."""
+    url = 'https://file.io?filename=' + os.path.basename(file_path)
+    with open(file_path, 'rb') as file:
+        files = {'file': file}
+        response = requests.post(url, files=files)
+        if response.status_code == 200:
+            data = response.json()
+            if data['success']:
+                download_link = f"{data['link']}[\"{os.path.basename(file_path)}\"]"
+                print(f'File uploaded successfully! Download link: {download_link}')
+                return download_link
+            else:
+                print('Failed to upload file. Status:', data['status'])
+        else:
+            print('Error:', response.status_code, response.text)
+    return None
+
+def update_gist(download_link):
+    """Updates the existing Gist with the new download link."""
+    url = f'https://api.github.com/gists/{GIST_ID}'
+    headers = {
+        'Authorization': f'token {GITHUB_TOKEN}',
+        'Accept': 'application/vnd.github.v3+json'
+    }
     
-    # Copy the URL to the clipboard using xclip
-    echo -n "$old_url" | xclip -selection clipboard
-    
-    echo "URL copied to clipboard."
-    
-    # Extract the filename from the URL
-    filename=$(echo "$old_url" | grep -oP '\[\K[^]]+' | tr -d '"')
-
-    # Download the file using the filename extracted from the URL
-    if curl -L -o "$filename" "${old_url%%\[*}"; then
-        echo "Downloaded: $filename"
-    else
-        echo "Download failed!"
-        exit 1
-    fi
-
-    # Check if a .zip file was downloaded
-    if [ ! -f "$filename" ]; then
-        echo "No .zip file found after download."
-        exit 1
-    fi
-
-    echo "Downloaded ZIP file: $filename"
-
-    # Re-upload the downloaded .zip file to file.io
-    new_link=$(curl -s -F "file=@$filename" https://file.io | jq -r .link)
-    
-    if [ "$new_link" = "null" ]; then
-        echo "Failed to upload file to file.io."
-        exit 1
-    fi
-    
-    new_link="${new_link}[\"$filename\"]"
-    echo "File re-uploaded successfully! New download link: $new_link"
-
-    # Escape special characters in old URL for sed usage, and use | as a delimiter instead of /
-    escaped_old_url=$(printf '%s\n' "$old_url" | sed -e 's/[\/&[]/\\&/g' | sed -e 's/]/\\]/g')
-
-    # Fetch the current Gist content
-    gist_content=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/gists/$GIST_ID)
-
-    if [ $? -ne 0 ]; then
-        echo "Failed to fetch Gist content."
-        exit 1
-    fi
-
-    # Extract the existing content of the file 'download_links.txt'
-    current_content=$(echo "$gist_content" | jq -r '.files["download_links.txt"].content')
-
-    # Replace only the old URL with the new one using | as delimiter for sed
-    updated_content=$(echo "$current_content" | sed "s|$escaped_old_url|$new_link|g")
-
-    # Prepare the JSON payload for updating the Gist
-    update_data=$(jq -n --arg content "$updated_content" '{
-        "files": {
-            "download_links.txt": {
-                "content": $content
+    # Fetch the existing Gist content
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        gist_data = response.json()
+        existing_content = gist_data['files']['download_links.txt']['content']
+        
+        # Update content with the new download link
+        updated_content = existing_content + f"\n{download_link}"
+        
+        # Update the Gist with new content
+        data = {
+            'files': {
+                'download_links.txt': {
+                    'content': updated_content
+                }
             }
         }
-    }')
+        
+        response = requests.patch(url, headers=headers, json=data)
+        if response.status_code == 200:
+            print(f'Gist updated successfully with new link: {download_link}')
+        else:
+            print('Failed to update Gist. Error:', response.status_code, response.text)
+    else:
+        print('Failed to fetch Gist. Error:', response.status_code, response.text)
 
-    # Update the Gist with the new content
-    update_response=$(curl -s -X PATCH -H "Authorization: token $GITHUB_TOKEN" -d "$update_data" https://api.github.com/gists/$GIST_ID)
+if __name__ == '__main__':
+    # Read the latest profile name created by the bash script
+    with open('current_profile.txt', 'r') as f:
+        profile_name = f.read().strip()
 
-    if echo "$update_response" | grep -q '"url":'; then
-        echo "Gist updated successfully with new link!"
-    else
-        echo "Failed to update Gist."
-        echo "$update_response"
-    fi
+    # Find the profile folder
+    profile_path = get_profile_path(profile_name)
 
-    # Unzip the downloaded .zip file into a folder
-    UNZIPPED_FOLDER="${filename%.zip}"  # Strip .zip extension
-    mkdir -p "$UNZIPPED_FOLDER"
-    unzip -o "$filename" -d "$UNZIPPED_FOLDER"
-    
-    # Add Firefox preferences and clean up session restore files
-    cat <<EOF > "$UNZIPPED_FOLDER/user.js"
-user_pref("browser.sessionstore.resume_from_crash", false);
-user_pref("browser.startup.page", 0);
-user_pref("browser.startup.homepage_override.mstone", "ignore");
-user_pref("browser.tabs.warnOnClose", false);
-user_pref("browser.warnOnQuit", false);
-user_pref("browser.sessionstore.max_tabs_undo", 0);
-EOF
-
-    rm -f "$UNZIPPED_FOLDER/sessionstore.js"
-    rm -f "$UNZIPPED_FOLDER/sessionCheckpoints.json"
-    rm -f "$UNZIPPED_FOLDER/recovery.jsonlz4"
-    rm -f "$UNZIPPED_FOLDER/recovery.baklz4"
-
-    # Launch Firefox with the new profile
-    nohup firefox --no-remote --new-instance --profile "$UNZIPPED_FOLDER" --purgecaches &
-
-else
-    echo "No valid URL received or URLs are exhausted."
-    exit 1
-fi
+    if profile_path:
+        zip_name = profile_name + '.zip'
+        
+        # Zip the profile folder
+        zip_folder(profile_path, zip_name)
+        
+        # Upload the zip file to file.io
+        download_link = upload_file_to_fileio(zip_name)
+        
+        if download_link:
+            # Update the Gist with the new download link
+            update_gist(download_link)
+        
+        # Remove the zip file after uploading
+        os.remove(zip_name)
+    else:
+        print(f"Profile folder for '{profile_name}' not found.")
