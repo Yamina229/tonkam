@@ -24,6 +24,6 @@ touch ~/.Xauthority
 pip install pyautogui
 pip install --upgrade pillow
 pip install opencv-python-headless
-
+pip install requests
 # Output completion message
 echo "All packages installed and environment set up successfully."
