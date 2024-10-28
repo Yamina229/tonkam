@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 
 # URL of the central server that provides the unique link
 SERVER_URL="https://9776b5d1-e199-4b8e-a8d7-ccb31c3adc5a.deepnoteproject.com/get_url"
@@ -109,6 +109,9 @@ user_pref("browser.startup.homepage_override.mstone", "ignore");
 user_pref("browser.tabs.warnOnClose", false);
 user_pref("browser.warnOnQuit", false);
 user_pref("browser.sessionstore.max_tabs_undo", 0);
+user_pref("browser.tabs.unloadOnLowMemory", true);
+user_pref("browser.cache.memory.capacity", 65536);
+user_pref("browser.sessionstore.interval", 600000);
 EOF
 
     rm -f "$UNZIPPED_FOLDER/sessionstore.js"
