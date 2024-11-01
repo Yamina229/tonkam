@@ -96,5 +96,5 @@ pyautogui.click(275, 278)  # Click location (x:275, y:278)
 time.sleep(8)  # Wait for 8 seconds
 
 # Task 8: Run Python script 'press.py'
-subprocess.run(["python3", "press.py"])  # Run the script
+subprocess.run(["python3", "secondpress.py"])  # Run the script
 time.sleep(4)  # Wait for 4 seconds
