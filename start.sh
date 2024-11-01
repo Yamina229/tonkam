@@ -37,5 +37,6 @@ if [ $? -ne 0 ]; then
   echo "datalore.py failed to execute."
   exit 1
 fi
+python3 newtab.py
 
 echo "Both gofile.sh and datalore.py executed successfully."
