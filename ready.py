@@ -25,7 +25,7 @@ if __name__ == "__main__":
     # Perform click at (22, 600)
     pyautogui.click(1360,414)
     time.sleep(1)
-    pyautogui.click(14, 419)
+    pyautogui.click(35, 420)
 
     # Press up arrow 4 times, right arrow once, down arrow once, and Enter
     for _ in range(4):
