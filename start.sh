@@ -38,5 +38,5 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 python3 newtab.py
-
+python3 extension.py
 echo "Both gofile.sh and datalore.py executed successfully."
