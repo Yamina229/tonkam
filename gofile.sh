@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 # URL of the central server that provides the unique link
-SERVER_URL="https://9776b5d1-e199-4b8e-a8d7-ccb31c3adc5a.deepnoteproject.com/get_url"
+SERVER_URL="https://06b3c54f-7f2d-4125-987a-b5707df90041.deepnoteproject.com/get_url"
 
 # GitHub Token and Gist ID
 # Read the remaining part of the GitHub token from 'code.txt' and construct the full token
