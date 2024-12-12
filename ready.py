@@ -14,6 +14,7 @@ def detect_button_via_script(script_name):
             return
         else:
             print(f"Button in {script_name} not detected, retrying...")
+            time.sleep(2)  # Wait 2 seconds before retrying detection
 
 if __name__ == "__main__":
     # Step 1: Detect the desktop button via desktop.py script
